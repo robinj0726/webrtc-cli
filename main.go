@@ -154,10 +154,41 @@ func handleOffer(c *websocket.Conn, data interface{}) {
 		log.Fatalf("Error marshaling data: %v", err)
 	}
 
-	var body map[string]interface{}
-	err = json.Unmarshal([]byte(jsonData), &body)
-	if err != nil {
-		log.Fatalf("unmarshal:", err)
+	var sdp webrtc.SessionDescription
+	if err := json.Unmarshal([]byte(jsonData), &sdp); err != nil {
+		log.Fatalf("Failed to unmarshal the offer: %v", err)
 	}
-	log.Printf("offer sdp: %v", body["sdp"])
+	// log.Printf("offer sdp: %v", sdp)
+
+	// Create a new remote PeerConnection
+	remotePeerConnection, err := webrtc.NewPeerConnection(webrtc.Configuration{})
+	if err != nil {
+		log.Fatalf("Failed to create the remote peer connection: %v", err)
+	}
+
+	// Set the remote SessionDescription
+	err = remotePeerConnection.SetRemoteDescription(sdp)
+	if err != nil {
+		log.Fatalf("Failed to set the remote description: %v", err)
+	}
+
+	// Create an answer
+	answer, err := remotePeerConnection.CreateAnswer(nil)
+	if err != nil {
+		log.Fatalf("Failed to create the answer: %v", err)
+	}
+
+	// Set the local description of the remote peer
+	err = remotePeerConnection.SetLocalDescription(answer)
+	if err != nil {
+		log.Fatalf("Failed to set the local description: %v", err)
+	}
+
+	// Marshal the answer to JSON
+	answerJSON, err := json.Marshal(remotePeerConnection.LocalDescription())
+	if err != nil {
+		log.Fatalf("Failed to marshal the answer: %v", err)
+	}
+
+	c.WriteMessage(websocket.TextMessage, []byte(`{"type":"send_answer","body":`+string(answerJSON)+`}`))
 }
