@@ -3,6 +3,9 @@ package main
 import (
 	"log"
 	"net/url"
+	"strconv"
+	"time"
+	"math/rand"
 
 	"github.com/gorilla/websocket"
 )
@@ -21,6 +24,8 @@ func main() {
 
 	log.Printf("Connected to %s", serverAddr)
 
+	Join(c, "tt", RandomNumber())
+
 	// Connection is established, you can now read and write messages
 	// Example: c.WriteMessage(websocket.TextMessage, []byte("your message here"))
 	for {
@@ -31,4 +36,15 @@ func main() {
 		}
 		log.Printf("Received: %s", message)
 	}
+}
+
+func Join(c *websocket.Conn, channelName string, userId int) {
+	// {"type":"join","body":{"channelName":"tt","userId":267887}}
+	c.WriteMessage(websocket.TextMessage, []byte(`{"type":"join","body":{"channelName":"`+channelName+`","userId":`+strconv.Itoa(userId)+`}}`))
+}
+
+// return 6-digit random number
+func RandomNumber() int {	
+	rand.Seed(time.Now().UnixNano())
+	return rand.Intn(900000) + 100000
 }
