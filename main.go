@@ -42,13 +42,12 @@ func main() {
 			continue
 		}
 
-		log.Printf("Received: %s", message)
+		// log.Printf("Received: %s", message)
 		switch msg["type"] {
 		case "joined":
 			handleJoined(c, msg["body"])
 		case "offer_sdp_received":
-			// parse offer sdp
-			log.Printf("message body: %s", msg["body"])
+			handleOffer(c, msg["body"])
 		default:
 			log.Println("Unknown message type")
 		}
@@ -147,4 +146,18 @@ func handleJoined(c *websocket.Conn, data interface{}) {
 
 	log.Printf("uids: %v", uids)
 	// sendOffer()
+}
+
+func handleOffer(c *websocket.Conn, data interface{}) {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		log.Fatalf("Error marshaling data: %v", err)
+	}
+
+	var body map[string]interface{}
+	err = json.Unmarshal([]byte(jsonData), &body)
+	if err != nil {
+		log.Fatalf("unmarshal:", err)
+	}
+	log.Printf("offer sdp: %v", body["sdp"])
 }
